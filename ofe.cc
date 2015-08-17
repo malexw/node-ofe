@@ -35,17 +35,22 @@ static void OnFatalError(const char* location, const char* message) {
   else
     fprintf(stderr, "FATAL ERROR: %s\n", message);
 
-  fprintf(stderr, "Generating HeapDump\n");
+  // time_t rawtime;
+  // struct tm* timeinfo;
+  // time(&rawtime);
+  // timeinfo = localtime(&rawtime);
 
-  time_t rawtime;
-  struct tm* timeinfo;
-  time(&rawtime);
-  timeinfo = localtime(&rawtime);
+  // char filename[256];
+  // strftime(filename, sizeof(filename),"%Y%m%dT%H%M%S.heapsnapshot", timeinfo);
+  char filename[] = "/tmp/node_fatal_error.heapsnapshot";
 
-  char filename[256];
-  strftime(filename, sizeof(filename),"%Y%m%dT%H%M%S.heapsnapshot", timeinfo);
+  fprintf(stderr, "Writing heap snapshot to %s\n", filename);
+
   FILE* fp = fopen(filename, "w");
-  if (fp == NULL) abort();
+  if (fp == NULL) {
+    fprintf(stderr, "Unable to write heap snapshot\n");
+    abort();
+  }
 
 #if NODE_VERSION_AT_LEAST(0, 11, 13)
   Isolate* isolate = Isolate::GetCurrent();
@@ -57,6 +62,9 @@ static void OnFatalError(const char* location, const char* message) {
   FileOutputStream stream(fp);
   snap->Serialize(&stream, HeapSnapshot::kJSON);
   fclose(fp);
+
+  fprintf(stderr, "Heap dump complete\n");
+
   exit(1);
 }
 
